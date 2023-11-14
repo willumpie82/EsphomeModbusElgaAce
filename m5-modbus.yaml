@@ -87,7 +87,7 @@ packages:
       entityID: varHpHeatPumpTR
       name: "Retour WP" 
       address: 404
-      type: S_WORD        #INTEGER16 / maar toch unsigned
+      type: S_WORD        #INTEGER16
       class: temperature
       multiply: 0.01
       unit: °C
@@ -107,9 +107,9 @@ packages:
       entityID: varZoneTRoomSetpoint
       name: "Ruimte Setpoint" 
       address: 1102
-      type: U_WORD        #UNSIGNED16
+      type: S_WORD        #SIGNED16
       class: temperature
-      multiply: 0.001
+      multiply: 0.01
       unit: °C
   varZoneTRoom: !include
     file: templates/modbusSensorRead.yaml
