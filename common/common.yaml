@@ -1,0 +1,9 @@
+---
+esphome:
+  name: ${device_name}
+  comment: ${comment}
+  friendly_name: ${friendly_name}
+
+button:
+  - platform: restart
+    name: 'Restart'

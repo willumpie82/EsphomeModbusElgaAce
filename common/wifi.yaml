@@ -1,0 +1,51 @@
+
+# Enable Home Assistant API
+api:
+    encryption:
+      key: ${api_password}
+  
+ota:
+  password: ${ota_password}
+
+wifi:
+  ssid: ${wifi_ssid}
+  password: ${wifi_password}
+  fast_connect: True
+  manual_ip:
+    static_ip: ${ip}
+    gateway: ${gateway}
+    subnet: ${subnet}
+    dns1: 192.169.2.15
+    dns2: 1.1.1.1
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: ${device_name}
+    password: ${wifi_password}
+
+captive_portal:
+  
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal "
+    update_interval: 10s
+
+text_sensor:
+  - platform: wifi_info
+    ssid:
+      name: "Connected SSID"
+      id: ssid
+      icon: mdi:wifi-strength-2
+      entity_category: diagnostic
+
+    bssid:
+      name: "Connected BSSID"
+      id: bssid
+      icon: mdi:wifi-strength-2
+      entity_category: diagnostic
+
+    mac_address:
+      name: "WiFi Mac Address"
+      id: macaddress
+      icon: mdi:wifi-strength-2
+      entity_category: diagnostic

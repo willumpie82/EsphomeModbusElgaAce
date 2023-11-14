@@ -1,0 +1,15 @@
+sensor:
+  - name: ${name}
+    platform: modbus_controller
+    modbus_controller_id: epever
+    id: ${entityID}
+    internal: false
+    register_type: read
+    address: ${address}
+    #response_size: 1
+    value_type: ${type}
+    accuracy_decimals: 1
+    device_class: ${class}
+    filters:
+      - multiply: ${multiply}
+    unit_of_measurement: ${unit}
