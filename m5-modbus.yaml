@@ -1,0 +1,542 @@
+substitutions:
+  device_name: "modbus"
+  friendly_name: "modubs warmtepomp"
+  comment: "m5 core, modbus"
+  location: "Zolder"
+  api_password: !secret modbus_api
+  ota_password: !secret ota_password
+  wifi_ssid: !secret wifi_ssid
+  wifi_password: !secret wifi_password
+  gateway: !secret ip_gateway
+  subnet: !secret ip_subnet
+  ip: !secret modbus_ip
+  pin_modbus_tx: GPIO17
+  pin_modbus_rx: GPIO16
+
+packages:
+  board: !include boards/esp32_M5core.yaml
+  connection: !include common/wifi.yaml
+  device_base: !include common/common.yaml
+  logger: !include templates/logger.yaml
+
+#parameter list: https://tools.remeha.nl/wp-content/uploads/sites/3/2020/08/Lijst-van-parameters-voor-GTW08.pdf
+#modbus registers
+  varApFlowmeter: !include
+    file: templates/modbusSensorRead.yaml
+    vars:
+      entityID: varApFlowmeter
+      name: "Stromingssnelheid" 
+      address: 410
+      type: U_WORD
+      class: water
+      multiply: 0.01
+      unit: l/min
+  FlowTemperatureReceived: !include
+    file: templates/modbusSensorRead.yaml
+    vars:
+      entityID: FlowTemperatureReceived
+      name: "Aanvoer apparaat" 
+      address: 273
+      type: S_WORD        #INTEGER16
+      class: temperature
+      multiply: 0.01
+      unit: °C
+  TemperatureSetpoint: !include
+    file: templates/modbusSensorRead.yaml
+    vars:
+      entityID: TemperatureSetpoint
+      name: "Temperatuur Setpoint" 
+      address: 257
+      type: S_WORD        #INTEGER16
+      class: temperature
+      multiply: 0.01
+      unit: °C
+  ReturnTemperatureReceived: !include
+    file: templates/modbusSensorRead.yaml
+    vars:
+      entityID: ReturnTemperatureReceived
+      name: "Retour apparaat" 
+      address: 274
+      type: S_WORD        #INTEGER16 / maar toch unsigned
+      class: temperature
+      multiply: 0.01      #was 0.001
+      unit: °C
+  varApTOutside: !include
+    file: templates/modbusSensorRead.yaml
+    vars:
+      entityID: varApTOutside
+      name: "Buitentemperatuur" 
+      address: 384
+      type: S_WORD        #INTEGER16
+      class: temperature
+      multiply: 0.01
+      unit: °C
+  varHpHeatPumpTF: !include
+    file: templates/modbusSensorRead.yaml
+    vars:
+      entityID: varHpHeatPumpTF
+      name: "Aanvoer WP" 
+      address: 403
+      type: S_WORD        #INTEGER16
+      class: temperature
+      multiply: 0.01
+      unit: °C
+  varHpHeatPumpTR: !include
+    file: templates/modbusSensorRead.yaml
+    vars:
+      entityID: varHpHeatPumpTR
+      name: "Retour WP" 
+      address: 404
+      type: S_WORD        #INTEGER16 / maar toch unsigned
+      class: temperature
+      multiply: 0.01
+      unit: °C
+  varZoneTemperatureSetpoint: !include
+    file: templates/modbusSensorRead.yaml
+    vars:
+      entityID: varZoneTemperatureSetpoint
+      name: "Aanvoer Setpoint" 
+      address: 1101
+      type: U_WORD        #UNSIGNED16
+      class: temperature
+      multiply: 0.01
+      unit: °C
+  varZoneTRoomSetpoint: !include
+    file: templates/modbusSensorRead.yaml
+    vars:
+      entityID: varZoneTRoomSetpoint
+      name: "Ruimte Setpoint" 
+      address: 1102
+      type: U_WORD        #UNSIGNED16
+      class: temperature
+      multiply: 0.001
+      unit: °C
+  varZoneTRoom: !include
+    file: templates/modbusSensorRead.yaml
+    vars:
+      entityID: varZoneTRoom
+      name: "Zone Setpoint" 
+      address: 1104
+      type: S_WORD        #SIGNED16
+      class: temperature
+      multiply: 0.1
+      unit: °C
+  parApSummerWinter: !include
+    file: templates/modbusSensorHolding.yaml
+    vars:
+      entityID: parApSummerWinter
+      name: "sumer/winter temp" 
+      address: 386
+      type: U_WORD        #UNSIGNED16
+      class: temperature
+      multiply: 0.01
+      unit: °C
+
+# GPIO pin of the display backlight
+output:
+  - platform: ledc
+    pin: 32
+    id: gpio_32_backlight_pwm
+    
+light:
+  - platform: monochromatic
+    output: gpio_32_backlight_pwm
+    name: "Display Backlight"
+    id: back_light
+    restore_mode: ALWAYS_OFF
+
+uart:
+  id: mod_bus
+  tx_pin: ${pin_modbus_tx}
+  rx_pin: ${pin_modbus_rx}
+  baud_rate: 9600
+  stop_bits: 1
+
+modbus:
+  flow_control_pin: 5
+  id: modbus1
+
+modbus_controller:
+  - id: epever
+    ## the Modbus device addr
+    address: 100
+    modbus_id: modbus1
+    setup_priority: -10
+    update_interval: 5s
+
+sensor:
+
+
+#ApWaterPressure 409 UNSIGNED8
+  - name: "Werkelijke waterdruk" 
+    platform: modbus_controller
+    modbus_controller_id: epever
+    id: ApWaterPressure
+    internal: false
+    register_type: holding
+    address: 409
+    response_size: 1
+    value_type: S_WORD
+    accuracy_decimals: 1
+    device_class: pressure
+    filters:
+      - multiply: 0.1
+    unit_of_measurement: bar
+
+#varApChEnergyConsumption
+  - name: "Energieverbruik totaal" 
+    platform: modbus_controller
+    modbus_controller_id: epever
+    id: varApChEnergyConsumption
+    internal: false
+    register_type: holding
+    address: 433
+    response_size: 2
+    value_type: U_DWORD
+    accuracy_decimals: 0
+    device_class: energy
+    filters:
+      - multiply: 1
+    unit_of_measurement: kWh
+
+#PowerActualReceived
+  - name: "Geleverd vermogen"
+    platform: modbus_controller
+    modbus_controller_id: epever
+    id: PowerActualReceived
+    internal: false
+    register_type: holding
+    address: 272
+    response_size: 1
+    value_type: U_WORD
+    accuracy_decimals: 2
+    device_class: power
+    filters:
+      - multiply: 0.1
+    unit_of_measurement: kW
+
+#varChCtrBurnerStarts 288 + 289
+  - name: "Teller branderstarts" 
+    platform: modbus_controller
+    modbus_controller_id: epever
+    id: varChCtrBurnerStarts
+    internal: false
+    register_type: holding
+    address: 288
+    #response_size: 2
+    value_type: U_DWORD
+
+#varApCtrServiceBurnerStarts 295 + 296
+  - name: "Compressor starts" 
+    platform: modbus_controller
+    modbus_controller_id: epever
+    id: varApCtrServiceBurnerStarts
+    internal: false
+    register_type: read
+    address: 293
+    # response_size: 2
+    value_type: U_DWORD
+#varApCtrBackup1Starts 295 + 296
+  - name: "Teller starts backup1" 
+    platform: modbus_controller
+    modbus_controller_id: epever
+    id: varApCtrBackup1Starts
+    internal: false
+    register_type: read
+    address: 295
+    value_type: U_DWORD
+#varApCtrBackup1Hours 297 + 298
+  # - name: "Teller uren backup1" 
+  #   platform: modbus_controller
+  #   modbus_controller_id: epever
+  #   id: varApCtrBackup1Hours
+  #   internal: false
+  #   register_type: read
+  #   address: 297
+  #   value_type: U_WORD
+#varApPowerActual 413 U16
+  - name: "Werkelijk geproduceerd relatief vermogen"
+    platform: modbus_controller
+    modbus_controller_id: epever
+    id: varApPowerActual
+    internal: false
+    register_type: read
+    address: 413
+    value_type: U_WORD
+    filters:
+    - calibrate_linear:
+        method: least_squares
+        datapoints:
+        # Map 0.0 (from sensor) to 1.0 (true value)
+        - 0.0 -> 0
+        - 65535 -> 100
+    unit_of_measurement: "%"
+#varHePowerSetpoint 414 U16
+  - name: "Vermogenssetpoint in % van max" 
+    platform: modbus_controller
+    modbus_controller_id: epever
+    id: varHePowerSetpoint
+    internal: false
+    register_type: holding
+    address: 414
+    response_size: 1
+    value_type: U_WORD
+    filters:
+    - calibrate_linear:
+        method: least_squares
+        datapoints:
+        # Map 0.0 (from sensor) to 1.0 (true value)
+        - 0.0 -> 0
+        - 65535 -> 100
+    unit_of_measurement: "%"
+
+#PowerSetpoint 256
+  - name: "Vermogen setpoint naar CU" 
+    platform: modbus_controller
+    modbus_controller_id: epever
+    id: PowerSetpoint
+    internal: false
+    register_type: read
+    address: 256
+    value_type: U_WORD
+
+
+#reading enums: https://github.com/esphome/feature-requests/issues/1663#issuecomment-1061842308
+text_sensor:
+  - platform: modbus_controller
+    modbus_controller_id: epever
+    id: varApSeasonMode
+    register_type: holding
+    address: 385
+    response_size: 2
+    raw_encode: NONE
+    name: "Seizoensmodus actief" 
+    lambda: |-
+      //uint8_t value
+      uint8_t value = data[1]; // or data[1], depending on, if the device use big, or little-endian
+      switch (value) {
+        case 0: return std::string("Winter");
+        case 1: return std::string("Vorst");
+        case 2: return std::string("ZomerNeutraalBand");
+        case 3: return std::string("zomer");
+        default: return std::string("[0]:" + std::to_string(data[0]) + " [1]:"  + std::to_string(data[1]));
+      }
+      return x;
+
+  - platform: modbus_controller
+    modbus_controller_id: epever
+    id: txtAlgorithType
+    register_type: holding
+    address: 258
+    raw_encode: NONE
+    response_size: 2
+    name: "Type regeling" 
+    lambda: |-
+      //uint8_t value
+      uint8_t value = data[1]; // or data[1], depending on, if the device use big, or little-endian
+      switch (value) {
+        case 0: return std::string("Beide");
+        case 1: return std::string("Vermogen");
+        case 2: return std::string("Temperatuur");
+        case 3: return std::string("geen");
+        default: return std::string("[0]:" + std::to_string(data[0]) + " [1]:"  + std::to_string(data[1]));
+      }
+      return x;
+
+  - platform: modbus_controller
+    modbus_controller_id: epever
+    id: HeatingMode
+    register_type: holding
+    address: 1109
+    raw_encode: NONE
+    name: "Type warmtevraag (Zone)" 
+    lambda: |-
+      uint8_t value = data[1];
+      switch (value) {
+        case 0: return std::string("Geen");
+        case 1: return std::string("Verwarming");
+        case 2: return std::string("Koeling");
+        default: return std::string("[0]:" + std::to_string(data[0]) + " [1]:"  + std::to_string(data[1]));
+      }
+      return x;
+
+  - platform: modbus_controller
+    modbus_controller_id: epever
+    id: Zone1Type
+    register_type: holding
+    address: 1109
+    raw_encode: NONE
+    name: "Zone1 type" 
+    lambda: |-
+      uint8_t value = data[1];
+      switch (value) {
+        case 0: return std::string("Niet aanwezig");
+        case 1: return std::string("Alleen CV");
+        case 2: return std::string("CV + KOELING");
+        case 3: return std::string("SWW");
+        case 4: return std::string("Processwarmte");
+        case 5: return std::string("Zwembad");
+        case 254: return std::string("overige");
+        default: return std::string("[0]:" + std::to_string(data[0]) + " [1]:"  + std::to_string(data[1]));
+      }
+      return x;
+
+  - platform: modbus_controller
+    modbus_controller_id: epever
+    id: parZone1Function
+    register_type: holding
+    address: 1109
+    raw_encode: NONE
+    name: "Zone1 Function" 
+    lambda: |-
+      uint8_t value = data[1];
+      switch (value) {
+        case 0: return std::string("Uitgeschakeld");
+        case 1: return std::string("Direct");
+        case 2: return std::string("Mengcircuit");
+        case 3: return std::string("Zwembad");
+        case 4: return std::string("Hoge temperatuur");
+        case 5: return std::string("Ventilatorconvector");
+        case 6: return std::string("SWW-tank");
+        case 7: return std::string("Elektrische SWWtank");
+        case 8: return std::string("Tijdprogramma");
+        case 9: return std::string("Proceswarmte");
+        case 254: return std::string("overige");
+        default: return std::string("[0]:" + std::to_string(data[0]) + " [1]:"  + std::to_string(data[1]));
+      }
+      return x;
+
+binary_sensor:
+#appliance status 1: 279
+# b1: varWarmtepompAan
+# b2: varElektrischeBack-upAan
+# b3: varElektrischeBack-up2Aan
+# b4: varSwwElektrischeBack-upAan
+# b5: varAp.serviceVereist
+# b6: varAp.voedingUitgeschakeldResetnodig
+# b7: varAp.waterdrukLaag
+- platform: modbus_controller
+  modbus_controller_id: epever
+  id: varWarmtepompAan
+  name: "App Staus 1(b1): WarmtePomp"
+  register_type: holding
+  address: 279
+  bitmask: 0x01 #(bit 1)
+- platform: modbus_controller
+  modbus_controller_id: epever
+  id: varElektrischeBackupAan
+  name: "App Staus 1(b2): backup1"
+  register_type: holding
+  address: 279
+  bitmask: 0x02 #(bit 2)
+- platform: modbus_controller
+  modbus_controller_id: epever
+  id: varElektrischeBackup2Aan
+  name: "App Staus 1(b3): backup2"
+  register_type: holding
+  address: 279
+  bitmask: 0x04 #(bit 3)
+- platform: modbus_controller
+  modbus_controller_id: epever
+  id: varSwwElektrischeBack
+  name: "App Staus 1(b4): SwwElektrischeBackup"
+  register_type: holding
+  address: 279
+  bitmask: 0x08 #(bit 4)
+- platform: modbus_controller
+  modbus_controller_id: epever
+  id: serviceVereist
+  name: "App Staus 1(b5): Service vereist"
+  register_type: holding
+  address: 279
+  bitmask: 0x10 #(bit 5)
+- platform: modbus_controller
+  modbus_controller_id: epever
+  id: voedingUitgeschakeldResetnodig
+  name: "App Staus 1(b6): voedingUitgeschakeldResetnodig"
+  register_type: holding
+  address: 279
+  bitmask: 0x20 #(bit 6)
+- platform: modbus_controller
+  modbus_controller_id: epever
+  id: waterdrukLaag
+  name: "App Staus 1(b7): waterdrukLaag"
+  register_type: holding
+  address: 279
+  bitmask: 0x40 #(bit 7)
+
+#280 - Appliance status 2
+# b0: varAp.pomp
+# b1: var3-wegklepOpen
+# b2: var3-wegklep
+# b3: var3-wegklepGesloten
+# b4: VarAp.SwwActief
+# b5: VarAp.CvActief
+# b6: varAp.koelingActief
+- platform: modbus_controller
+  modbus_controller_id: epever
+  id: varAppomp
+  name: "App Staus 2(b1): AP pomp"
+  register_type: holding
+  address: 280
+  bitmask: 0x01 #(bit 1)
+- platform: modbus_controller
+  modbus_controller_id: epever
+  id: var3wegklepOpen
+  name: "App Staus 2(b2): 3-weg klep open"
+  register_type: holding
+  address: 280
+  bitmask: 0x02 #(bit 2)
+- platform: modbus_controller
+  modbus_controller_id: epever
+  id: var3wegklep
+  name: "App Staus 2(b3): 3-weg klep"
+  register_type: holding
+  address: 280
+  bitmask: 0x04 #(bit 3)
+- platform: modbus_controller
+  modbus_controller_id: epever
+  id: var3wegklepgesloten
+  name: "App Staus 2(b4): 3-weg klep gesloten"
+  register_type: holding
+  address: 280
+  bitmask: 0x08 #(bit 4)
+- platform: modbus_controller
+  modbus_controller_id: epever
+  id: varSwwActief
+  name: "App Staus 2(b5): Sww Actief"
+  register_type: holding
+  address: 280
+  bitmask: 0x10 #(bit 5)
+- platform: modbus_controller
+  modbus_controller_id: epever
+  id: CvActief
+  name: "App Staus 2(b6): Cv Actief"
+  register_type: holding
+  address: 280
+  bitmask: 0x20 #(bit 6)
+- platform: modbus_controller
+  modbus_controller_id: epever
+  id: koelingActief
+  name: "App Staus 2(b7): koeling Actief"
+  register_type: holding
+  address: 280
+  bitmask: 0x40 #(bit 7)
+- name: "CH enabled" 
+  platform: modbus_controller
+  modbus_controller_id: epever
+  id: parApChEnabled
+  internal: false
+  register_type: holding
+  address: 500
+  response_size: 1
+
+#modbus write registers
+number:
+  - platform: modbus_controller
+    modbus_controller_id: epever
+    id: Num_TemperatureSetpoint
+    name: "Temperatuur setpoint"
+    address: 257
+    value_type: S_WORD
+    multiply: 100
