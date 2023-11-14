@@ -41,16 +41,16 @@ packages:
       class: temperature
       multiply: 0.01
       unit: °C
-  TemperatureSetpoint: !include
-    file: templates/modbusSensorRead.yaml
-    vars:
-      entityID: TemperatureSetpoint
-      name: "Temperatuur Setpoint" 
-      address: 257
-      type: S_WORD        #INTEGER16
-      class: temperature
-      multiply: 0.01
-      unit: °C
+  # TemperatureSetpoint: !include
+  #   file: templates/modbusSensorRead.yaml
+  #   vars:
+  #     entityID: TemperatureSetpoint
+  #     name: "Temperatuur Setpoint" 
+  #     address: 257
+  #     type: S_WORD        #INTEGER16
+  #     class: temperature
+  #     multiply: 0.01
+  #     unit: °C
   ReturnTemperatureReceived: !include
     file: templates/modbusSensorRead.yaml
     vars:
@@ -109,7 +109,7 @@ packages:
       address: 1102
       type: S_WORD        #SIGNED16
       class: temperature
-      multiply: 0.01
+      multiply: 0.1
       unit: °C
   varZoneTRoom: !include
     file: templates/modbusSensorRead.yaml
@@ -255,50 +255,50 @@ sensor:
   #   address: 297
   #   value_type: U_WORD
 #varApPowerActual 413 U16
-  - name: "Werkelijk geproduceerd relatief vermogen"
-    platform: modbus_controller
-    modbus_controller_id: epever
-    id: varApPowerActual
-    internal: false
-    register_type: read
-    address: 413
-    value_type: U_WORD
-    filters:
-    - calibrate_linear:
-        method: least_squares
-        datapoints:
-        # Map 0.0 (from sensor) to 1.0 (true value)
-        - 0.0 -> 0
-        - 65535 -> 100
-    unit_of_measurement: "%"
-#varHePowerSetpoint 414 U16
-  - name: "Vermogenssetpoint in % van max" 
-    platform: modbus_controller
-    modbus_controller_id: epever
-    id: varHePowerSetpoint
-    internal: false
-    register_type: holding
-    address: 414
-    response_size: 1
-    value_type: U_WORD
-    filters:
-    - calibrate_linear:
-        method: least_squares
-        datapoints:
-        # Map 0.0 (from sensor) to 1.0 (true value)
-        - 0.0 -> 0
-        - 65535 -> 100
-    unit_of_measurement: "%"
+#   - name: "Werkelijk geproduceerd relatief vermogen"
+#     platform: modbus_controller
+#     modbus_controller_id: epever
+#     id: varApPowerActual
+#     internal: false
+#     register_type: read
+#     address: 413
+#     value_type: U_WORD
+#     filters:
+#     - calibrate_linear:
+#         method: least_squares
+#         datapoints:
+#         # Map 0.0 (from sensor) to 1.0 (true value)
+#         - 0.0 -> 0
+#         - 65535 -> 100
+#     unit_of_measurement: "%"
+# #varHePowerSetpoint 414 U16
+#   - name: "Vermogenssetpoint in % van max" 
+#     platform: modbus_controller
+#     modbus_controller_id: epever
+#     id: varHePowerSetpoint
+#     internal: false
+#     register_type: holding
+#     address: 414
+#     response_size: 1
+#     value_type: U_WORD
+#     filters:
+#     - calibrate_linear:
+#         method: least_squares
+#         datapoints:
+#         # Map 0.0 (from sensor) to 1.0 (true value)
+#         - 0.0 -> 0
+#         - 65535 -> 100
+#     unit_of_measurement: "%"
 
-#PowerSetpoint 256
-  - name: "Vermogen setpoint naar CU" 
-    platform: modbus_controller
-    modbus_controller_id: epever
-    id: PowerSetpoint
-    internal: false
-    register_type: read
-    address: 256
-    value_type: U_WORD
+# #PowerSetpoint 256
+#   - name: "Vermogen setpoint naar CU" 
+#     platform: modbus_controller
+#     modbus_controller_id: epever
+#     id: PowerSetpoint
+#     internal: false
+#     register_type: read
+#     address: 256
+#     value_type: U_WORD
 
 
 #reading enums: https://github.com/esphome/feature-requests/issues/1663#issuecomment-1061842308
@@ -323,25 +323,25 @@ text_sensor:
       }
       return x;
 
-  - platform: modbus_controller
-    modbus_controller_id: epever
-    id: txtAlgorithType
-    register_type: holding
-    address: 258
-    raw_encode: NONE
-    response_size: 2
-    name: "Type regeling" 
-    lambda: |-
-      //uint8_t value
-      uint8_t value = data[1]; // or data[1], depending on, if the device use big, or little-endian
-      switch (value) {
-        case 0: return std::string("Beide");
-        case 1: return std::string("Vermogen");
-        case 2: return std::string("Temperatuur");
-        case 3: return std::string("geen");
-        default: return std::string("[0]:" + std::to_string(data[0]) + " [1]:"  + std::to_string(data[1]));
-      }
-      return x;
+  # - platform: modbus_controller
+  #   modbus_controller_id: epever
+  #   id: txtAlgorithType
+  #   register_type: holding
+  #   address: 258
+  #   raw_encode: NONE
+  #   response_size: 2
+  #   name: "Type regeling" 
+  #   lambda: |-
+  #     //uint8_t value
+  #     uint8_t value = data[1]; // or data[1], depending on, if the device use big, or little-endian
+  #     switch (value) {
+  #       case 0: return std::string("Beide");
+  #       case 1: return std::string("Vermogen");
+  #       case 2: return std::string("Temperatuur");
+  #       case 3: return std::string("geen");
+  #       default: return std::string("[0]:" + std::to_string(data[0]) + " [1]:"  + std::to_string(data[1]));
+  #     }
+  #     return x;
 
   - platform: modbus_controller
     modbus_controller_id: epever
@@ -364,7 +364,7 @@ text_sensor:
     modbus_controller_id: epever
     id: Zone1Type
     register_type: holding
-    address: 1109
+    address: 640
     raw_encode: NONE
     name: "Zone1 type" 
     lambda: |-
@@ -385,7 +385,7 @@ text_sensor:
     modbus_controller_id: epever
     id: parZone1Function
     register_type: holding
-    address: 1109
+    address: 641
     raw_encode: NONE
     name: "Zone1 Function" 
     lambda: |-
@@ -531,12 +531,12 @@ binary_sensor:
   address: 500
   response_size: 1
 
-#modbus write registers
-number:
-  - platform: modbus_controller
-    modbus_controller_id: epever
-    id: Num_TemperatureSetpoint
-    name: "Temperatuur setpoint"
-    address: 257
-    value_type: S_WORD
-    multiply: 100
+# #modbus write registers
+# number:
+#   - platform: modbus_controller
+#     modbus_controller_id: epever
+#     id: Num_TemperatureSetpoint
+#     name: "Temperatuur setpoint"
+#     address: 257
+#     value_type: S_WORD
+#     multiply: 100
