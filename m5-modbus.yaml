@@ -265,8 +265,6 @@ sensor:
       - sliding_window_moving_average:
           window_size: 10
           
-
-
   - name: "COP"
     platform: template
     id: elgaCOP
@@ -290,7 +288,6 @@ sensor:
 
 
 #reading enums: https://github.com/esphome/feature-requests/issues/1663#issuecomment-1061842308
-
 text_sensor:
   - platform: modbus_controller
     modbus_controller_id: epever
