@@ -1,0 +1,96 @@
+type: vertical-stack
+cards:
+  - type: glance
+    show_name: true
+    show_icon: true
+    show_state: false
+    state_color: true
+    title: Elga status
+    entities:
+      - entity: binary_sensor.modbus_app_staus_1b1_warmtepomp
+        name: WP
+        icon: mdi:heat-pump
+      - entity: binary_sensor.modbus_app_staus_1b7_waterdruklaag
+        name: W.Druk
+        icon: mdi:water-opacity
+      - entity: binary_sensor.modbus_app_staus_2b5_sww_actief
+        name: SWW
+        icon: mdi:heat-pump
+      - entity: binary_sensor.modbus_app_staus_2b6_cv_actief
+        name: CV
+        icon: mdi:gas-burner
+      - entity: binary_sensor.modbus_app_staus_2b1_ap_pomp
+        name: Pomp
+        icon: mdi:pump
+      - entity: binary_sensor.modbus_app_staus_1b2_backup1
+        name: Back1
+      - entity: binary_sensor.modbus_app_staus_2b5_sww_actief
+        name: SWW
+        icon: mdi:water-boiler
+  - type: picture-elements
+    elements:
+      - entity: binary_sensor.modbus_app_staus_2b5_sww_actief
+        style:
+          left: 18%
+          top: 74%
+        type: state-icon
+        icon: mdi:heat-pump
+      - entity: binary_sensor.modbus_app_staus_2b1_ap_pomp
+        style:
+          left: 70%
+          top: 83%
+        type: state-icon
+        icon: mdi:pump
+      - entity: sensor.modbus_werkelijke_waterdruk
+        style:
+          left: 78%
+          top: 83%
+        type: state-label
+      - entity: binary_sensor.modbus_app_staus_2b6_cv_actief
+        style:
+          left: 68%
+          top: 50%
+        type: state-icon
+        icon: mdi:gas-burner
+      - entity: binary_sensor.modbus_app_staus_2b2_3_weg_klep_open
+        style:
+          left: 75%
+          top: 30%
+        type: state-icon
+        icon: mdi:valve-open
+      - entity: binary_sensor.modbus_app_staus_2b4_3_weg_klep_gesloten
+        style:
+          left: 75%
+          top: 43%
+        type: state-icon
+        icon: mdi:valve-closed
+      - entity: sensor.modbus_retour_wp
+        style:
+          left: 64%
+          top: 13%
+        type: state-label
+      - entity: sensor.modbus_aanvoer_apparaat
+        style:
+          left: 64%
+          top: 23%
+        type: state-label
+      - entity: sensor.modbus_aanvoer_wp
+        style:
+          left: 69%
+          top: 66%
+        type: state-label
+      - entity: sensor.modbus_buitentemperatuur
+        style:
+          left: 8%
+          top: 20%
+        type: state-label
+    image: https://portal.husdata.se/img/BV_3_HA.png
+  - type: entities
+    entities:
+      - entity: sensor.modbus_energieverbruik_totaal
+        name: 'Energie verbruik '
+      - entity: sensor.modbus_geleverd_vermogen
+        name: 'Geleverd vermogen '
+      - entity: sensor.warmtepomp_power_2
+        name: Opgenomen vermogen (plug)
+      - entity: sensor.modbus_cop
