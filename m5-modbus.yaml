@@ -84,7 +84,7 @@ packages:
   varHpHeatPumpTR: !include
     file: templates/modbusSensorRead.yaml
     vars:
-      entityID: varHpHeatPumpTR
+      entityID: varHpHeatPumpTR 
       name: "Retour WP" 
       address: 404
       type: S_WORD        #INTEGER16
@@ -236,6 +236,7 @@ sensor:
     address: 293
     # response_size: 2
     value_type: U_DWORD
+
 #varApCtrBackup1Starts 295 + 296
   - name: "Teller starts backup1" 
     platform: modbus_controller
@@ -245,63 +246,51 @@ sensor:
     register_type: read
     address: 295
     value_type: U_DWORD
-#varApCtrBackup1Hours 297 + 298
-  # - name: "Teller uren backup1" 
-  #   platform: modbus_controller
-  #   modbus_controller_id: epever
-  #   id: varApCtrBackup1Hours
-  #   internal: false
-  #   register_type: read
-  #   address: 297
-  #   value_type: U_WORD
-#varApPowerActual 413 U16
-#   - name: "Werkelijk geproduceerd relatief vermogen"
-#     platform: modbus_controller
-#     modbus_controller_id: epever
-#     id: varApPowerActual
-#     internal: false
-#     register_type: read
-#     address: 413
-#     value_type: U_WORD
-#     filters:
-#     - calibrate_linear:
-#         method: least_squares
-#         datapoints:
-#         # Map 0.0 (from sensor) to 1.0 (true value)
-#         - 0.0 -> 0
-#         - 65535 -> 100
-#     unit_of_measurement: "%"
-# #varHePowerSetpoint 414 U16
-#   - name: "Vermogenssetpoint in % van max" 
-#     platform: modbus_controller
-#     modbus_controller_id: epever
-#     id: varHePowerSetpoint
-#     internal: false
-#     register_type: holding
-#     address: 414
-#     response_size: 1
-#     value_type: U_WORD
-#     filters:
-#     - calibrate_linear:
-#         method: least_squares
-#         datapoints:
-#         # Map 0.0 (from sensor) to 1.0 (true value)
-#         - 0.0 -> 0
-#         - 65535 -> 100
-#     unit_of_measurement: "%"
 
-# #PowerSetpoint 256
-#   - name: "Vermogen setpoint naar CU" 
-#     platform: modbus_controller
-#     modbus_controller_id: epever
-#     id: PowerSetpoint
-#     internal: false
-#     register_type: read
-#     address: 256
-#     value_type: U_WORD
+# calculating COP thanks to JBtL @ tweakers.net
+# https://gathering.tweakers.net/forum/view_message/77172604  
+  - name: "PM power" 
+    platform: homeassistant
+    id: pm_warmtepomp_energy_power
+    entity_id: sensor.warmtepomp_power_2 #id of your powermeter
+    internal: false
+    unit_of_measurement: 'W'
+    device_class: power
+    accuracy_decimals: 0
+    filters:
+      - timeout:
+          timeout: 2min
+          value: 0
+      - round: 0
+      - sliding_window_moving_average:
+          window_size: 10
+          
+
+
+  - name: "COP"
+    platform: template
+    id: elgaCOP
+    internal: False
+    unit_of_measurement: "W/W"
+    lambda: |-
+      if( id(pm_warmtepomp_energy_power).state >= 60 )
+      {  
+        float Deltat = id(varHpHeatPumpTF).state - id(varHpHeatPumpTR).state;
+        float FlowModified = id(varApFlowmeter).state + 1;
+        float warmte = Deltat * 69.766667 * FlowModified;
+        ESP_LOGD("lambda", "COP debug = Deltat: %f, FlowModified: %f, warmte: %f", Deltat, FlowModified, warmte);
+        return warmte / id(pm_warmtepomp_energy_power).state;
+      }
+      else
+      {
+        ESP_LOGD("lambda", "power lower than 60W, return 0");
+        return 0.0;
+      }
+      return 0.0;
 
 
 #reading enums: https://github.com/esphome/feature-requests/issues/1663#issuecomment-1061842308
+
 text_sensor:
   - platform: modbus_controller
     modbus_controller_id: epever
@@ -322,6 +311,7 @@ text_sensor:
         default: return std::string("[0]:" + std::to_string(data[0]) + " [1]:"  + std::to_string(data[1]));
       }
       return x;
+
 
   # - platform: modbus_controller
   #   modbus_controller_id: epever
