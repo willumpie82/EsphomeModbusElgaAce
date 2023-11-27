@@ -1,0 +1,113 @@
+
+substitutions:
+  device_name: "dsmr"
+  friendly_name: "dsmr"
+  comment: "esp8266"
+  location: "zolder"
+  api_password: !secret esp_P1_api
+  ota_password: !secret ota_password
+  wifi_ssid: !secret wifi_ssid
+  wifi_password: !secret wifi_password
+  gateway: !secret ip_gateway
+  subnet: !secret ip_subnet
+  ip: !secret esp_P1_ip
+  pin_data: GPIO12
+  pin_status: GPIO2
+
+
+packages:
+  board: !include boards/esp12f.yaml
+  device_base: !include common/common.yaml
+  connection: !include common/wifi.yaml
+  #status: !include templates/status.yaml
+  logger: !include templates/logger.yaml
+
+#uart config for DSMR v2 (9600-7N1)
+uart:
+  rx_pin: ${pin_data}
+  baud_rate: 9600
+  data_bits: 7
+  parity: NONE
+  stop_bits: 1
+  id: dmsr_uart
+
+#uart config for dsmr (115200-8N1)
+# uart:
+#   rx_pin: ${pin_data}
+#   baud_rate: 115200
+#   data_bits: 8
+#   parity: NONE
+#   stop_bits: 1
+#   id: dmsr_uart
+
+dsmr:
+  crc_check: false
+  uart_id: dmsr_uart
+
+#https://www.esphome.io/components/sensor/dsmr.html?highlight=dsmr#component-hub
+sensor:
+  - platform: dsmr
+    energy_delivered_tariff1:
+      name: energy_delivered_tariff1
+    energy_delivered_tariff2:
+      name: energy_delivered_tariff2
+    energy_returned_tariff1:
+      name: energy_returned_tariff1
+    energy_returned_tariff2:
+      name: energy_returned_tariff2
+    power_delivered:
+      name: power_delivered
+    power_returned:
+      name: power_returned
+    electricity_failures:
+      name: electricity_failures
+    electricity_long_failures:
+      name: Long Electricity Failures.
+    electricity_sags_l1: 
+      name: Number of voltage sags in phase L1.
+    electricity_sags_l2: 
+      name: Number of voltage sags in phase L2.
+    electricity_sags_l3: 
+      name: Number of voltage sags in phase L3.
+    electricity_swells_l1: 
+      name: Number of voltage swells in phase L1.
+    electricity_swells_l2: 
+      name: Number of voltage swells in phase L2.
+    electricity_swells_l3: 
+      name: Number of voltage swells in phase L3.
+    voltage_l1: 
+      name: Voltage Phase 1.
+    voltage_l2: 
+      name: Voltage Phase 2.
+    voltage_l3: 
+      name: Voltage Phase 3.
+    current_l1: 
+      name: Current Phase 1.
+    current_l2: 
+      name: Current Phase 2.
+    current_l3: 
+      name: Current Phase 3.
+    power_delivered_l1: 
+      name: Power Consumed Phase 1.
+    power_delivered_l2: 
+      name: Power Consumed Phase 2.
+    power_delivered_l3: 
+      name: Power Consumed Phase 3.
+    power_returned_l1: 
+      name: Power Produced Phase 1.
+    power_returned_l2: 
+      name: Power Produced Phase 2.
+    power_returned_l3: 
+      name: Power Produced Phase 3.
+    gas_delivered: 
+      name: Gas Consumed.
+
+text_sensor:
+  - platform: dsmr
+    identification:
+      name: "dsmr_identification"
+    p1_version:
+      name: "dsmr_p1_version"
+    electricity_tariff:
+      name: "electricity_tariff"
+
